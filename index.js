@@ -24,8 +24,8 @@ app.use((error, req, res, next) => {
     if(res.headerSent) {
         return next(error)
     }
-    const textmessage = error.message ? error.message : 'An unknown error occurred'
-    res.json(new HttpError(textmessage, 500))
+    res.status(error.code || 500)
+    res.json({message: error.message || 'An unknown error occurred!'})
 })
 
 //Database

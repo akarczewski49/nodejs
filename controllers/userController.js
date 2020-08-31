@@ -4,16 +4,32 @@ const { validationResult } = require('express-validator')
 
 const getUsers = (req, res, next) => {}
 
-const login = (req, res, next) => {}
+const login = async (req, res, next) => {
+    const { email, password } = req.body
+
+    let hasUser
+    try{
+        hasUser = await User.findOne({ email: email})
+    } catch(err) {
+        return next(new HttpError('Logging in failed, please try again later', 500))
+    }
+
+    if(!hasUser || hasUser.password !== password){
+        return next(new HttpError('Invalid credentials, could not log you in', 401))
+    }
+
+    res.status(201).send({message: 'Logged in!'})
+}
 
 const signup = async (req, res, next) => {
     const errors = validationResult(req)
     if(!errors.isEmpty()) {
-        return next(new HttpError('Invalid inputs passed, please check your data', 422))
+        throw new HttpError('Invalid inputs passed, please check your data', 422)
     }
 
     const { username, email, password, posts } = req.body
-    let hasUser
+
+    let hasUser;
     try{
         hasUser = await User.findOne({ email: email})
     } catch(err) {
@@ -21,22 +37,22 @@ const signup = async (req, res, next) => {
     }
 
     if(hasUser){ 
-        return next(new HttpError('User existing alreadt, please login insead', 422))
+        return next(new HttpError('User existing already, please login insead', 422))
     }
     
-    let createdUser
+    const createdUser = new User({
+        username,
+        email,
+        password,
+        posts
+    })
+
     try{
-        createdUser = await new User({
-            username,
-            email,
-            password,
-            posts
-        }).save
+        await createdUser.save() 
     } catch(err) {
         return next(new HttpError('Creating user failed, please try again', 200))
     }
-
-    res.status(201).send({data: createdPost, message: 'User was created!'})
+    res.status(201).send({ data: createdUser, message: 'User was created!'})
 
 }
 

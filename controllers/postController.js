@@ -18,7 +18,8 @@ const addPost = async (req, res, next) => {
             author
         }).save()
     } catch(err) {
-        return next(new HttpError('Creating post failed, please try again', 500))
+        const error = new HttpError('Creating post failed, please try again', 500)
+        return next(error)
     }
     
     res.status(201).send({data: createdPost, message: 'Post was created!'})
