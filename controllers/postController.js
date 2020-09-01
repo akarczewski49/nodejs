@@ -108,6 +108,8 @@ const deletePost = async (req, res, next) => {
 
     try {
         await post.remove()
+        post.author.posts.pull(post)
+        post.author.save()
     } catch(err) {
         return next(new HttpError('Something went wrong, could not delete post', 500))
     }

@@ -11,6 +11,6 @@ router.post('/add', [check('title').not().isEmpty(), check('text').not().isEmpty
 
 router.patch('/:postId', postController.patchPost)
 
-router.delete('/delete', postController.deletePost)
+router.delete('/delete/:postId', postController.deletePost)
 
 module.exports = router
