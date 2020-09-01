@@ -1,25 +1,42 @@
 const Post = require('../models/post')
 const HttpError = require('../models/http-error')
+const User = require('../models/user')
 const { validationResult } = require('express-validator')
+const mongoose = require('mongoose')
 
 const addPost = async (req, res, next) => {
     const errors = validationResult(req)
     if(!errors.isEmpty()){
-        
+        throw new HttpError('Invalid inputs passed, please check your data', 422) 
     }
 
     const { title, text, author } = req.body
 
-    let createdPost
+    const createdPost = new Post({
+        title,
+        text,
+        author
+    })
+
+    let user;
     try{
-        createdPost = await new Post({
-            title,
-            text,
-            author
-        }).save()
+        user = await User.findById(author)
     } catch(err) {
-        const error = new HttpError('Creating post failed, please try again', 500)
-        return next(error)
+        return next(new HttpError('Creating post failed, please try again', 500))
+    }
+
+    if(!user) {
+        return next(new HttpError('Could not find user for provided id', 404))
+    }
+
+    console.log(user)
+
+    try{
+        await createdPost.save()
+        user.posts.push(createdPost)
+        await user.save()
+    } catch(err) {
+        return next(new HttpError('Creating post failed, please try again', 500))
     }
     
     res.status(201).send({data: createdPost, message: 'Post was created!'})
@@ -80,10 +97,15 @@ const deletePost = async (req, res, next) => {
 
     let post
     try {
-        post = await Post.findById(postId)
+        post = await Post.findById(postId).populate('author')
     } catch(err) {
         return next(new HttpError('Something went wrong, could not delete post', 500))
     }
+
+    if(!post) {
+        return next(new HttpError('Could not find post for this id', 404))
+    }
+
     try {
         await post.remove()
     } catch(err) {

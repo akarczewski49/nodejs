@@ -2,7 +2,16 @@ const User = require('../models/user')
 const HttpError = require('../models/http-error')
 const { validationResult } = require('express-validator')
 
-const getUsers = (req, res, next) => {}
+const getUsers = async (req, res, next) => {
+    let users;
+    try{
+        users = await User.find({}, '-password')
+    } catch(err) {
+        return next(new HttpError('Fetching users failed, please again later', 500))
+    }
+    
+    res.status(201).send({data: users})
+}
 
 const login = async (req, res, next) => {
     const { email, password } = req.body
@@ -27,7 +36,7 @@ const signup = async (req, res, next) => {
         throw new HttpError('Invalid inputs passed, please check your data', 422)
     }
 
-    const { username, email, password, posts } = req.body
+    const { username, email, password } = req.body
 
     let hasUser;
     try{
@@ -44,7 +53,7 @@ const signup = async (req, res, next) => {
         username,
         email,
         password,
-        posts
+        posts: []
     })
 
     try{
@@ -52,6 +61,7 @@ const signup = async (req, res, next) => {
     } catch(err) {
         return next(new HttpError('Creating user failed, please try again', 200))
     }
+
     res.status(201).send({ data: createdUser, message: 'User was created!'})
 
 }
